@@ -39,6 +39,9 @@ class InAppNotification extends StatelessWidget {
 
   final Widget child;
 
+  static Size _screenSize = Size.zero;
+
+
   /// Shows specified Widget as notification.
   ///
   /// [child] is required, this will be displayed as notification body.
@@ -67,7 +70,7 @@ class InAppNotification extends StatelessWidget {
 
     assert(controller != null, 'Not found InAppNotification controller.');
 
-    await controller!.create(child: child, context: context, onTap: onTap);
+    await controller!.create(child: child, context: context, screenSize: _screenSize, onTap: onTap);
     if (kDebugMode) {
       await notificationCreatedCallback?.call();
     }
@@ -90,7 +93,10 @@ class InAppNotification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _VsyncProvider(child: child);
+    return LayoutBuilder(builder: (_, constraints) {
+      _screenSize = constraints.biggest;
+      return _VsyncProvider(child: child);
+    });
   }
 }
 
@@ -113,6 +119,7 @@ class _NotificationController extends InheritedWidget {
   Future<void> create({
     required Widget child,
     required BuildContext context,
+    required Size screenSize,
     VoidCallback? onTap,
   }) async {
     await dismiss(shouldAnimation: !state.showController.isDismissed);
@@ -124,7 +131,7 @@ class _NotificationController extends InheritedWidget {
     state.overlay = OverlayEntry(
       builder: (context) {
         if (state.screenSize == Size.zero) {
-          state.screenSize = MediaQuery.of(context).size;
+          state.screenSize = screenSize;
           state.horizontalAnimationController.screenWidth =
               state.screenSize.width;
         }
